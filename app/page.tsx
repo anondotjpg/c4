@@ -49,66 +49,88 @@ const EvilCharacter = () => {
   if (!isLargeScreen) return null;
 
   return (
-    <motion.div
-      style={{
-        position: "fixed",
-        left: 0,
-        bottom: 0,
-        display: "flex",
-        flexDirection: "column",
-        alignItems: "flex-start",
-        zIndex: 500,
-        // Scale down to 80% (20% smaller)
-        transform: "scale(0.8)",
-        transformOrigin: "bottom left",
-      }}
-      animate={{ y: isVisible ? 0 : 600 }}
-      initial={{ y: 600 }}
-      transition={{
-        type: "tween",
-        ease: "easeInOut",
-        duration: 1,
-      }}
-    >
-      <div
+    <>
+      {/* Red overlay that fades in/out with the character */}
+      <motion.div
         style={{
-          background: "#c0c0c0",
-          border: "2px solid",
-          borderColor: "#ffffff #808080 #808080 #ffffff",
-          boxShadow: "2px 2px 0px #000000",
-          padding: "18px 24px",
-          marginLeft: "30px",
-          marginBottom: "12px",
-          maxWidth: "420px",
-          fontSize: "19px",
-          fontFamily: '"MS Sans Serif", sans-serif',
-          position: "relative",
+          position: "fixed",
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: "red",
+          pointerEvents: "none",
+          zIndex: 499,
         }}
-      >
-        I am Dr. Kitty. I have rigged this insanely cute and innocent kitty with c4. The only way to save him is to pump $c4t to $1 Million in 24 hours. But I know the trenches can't do that. MWEWEWEWEWEW
-        <div
-          style={{
-            position: "absolute",
-            bottom: "-15px",
-            left: "45px",
-            width: 0,
-            height: 0,
-            borderLeft: "15px solid transparent",
-            borderRight: "15px solid transparent",
-            borderTop: "15px solid #c0c0c0",
-          }}
-        />
-      </div>
-      <img
-        src="/evil.png"
-        alt="Evil character"
-        style={{
-          width: "300px",
-          height: "auto",
-          objectFit: "contain",
+        animate={{ opacity: isVisible ? 0.3 : 0 }}
+        initial={{ opacity: 0 }}
+        transition={{
+          type: "tween",
+          ease: "easeInOut",
+          duration: 1,
         }}
       />
-    </motion.div>
+      <motion.div
+        style={{
+          position: "fixed",
+          left: 0,
+          bottom: 0,
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "flex-start",
+          zIndex: 500,
+          // Scale down to 80% (20% smaller)
+          transform: "scale(0.8)",
+          transformOrigin: "bottom left",
+        }}
+        animate={{ y: isVisible ? 0 : 600 }}
+        initial={{ y: 600 }}
+        transition={{
+          type: "tween",
+          ease: "easeInOut",
+          duration: 1,
+        }}
+      >
+        <div
+          style={{
+            background: "#c0c0c0",
+            border: "2px solid",
+            borderColor: "#ffffff #808080 #808080 #ffffff",
+            boxShadow: "2px 2px 0px #000000",
+            padding: "18px 24px",
+            marginLeft: "30px",
+            marginBottom: "12px",
+            maxWidth: "420px",
+            fontSize: "19px",
+            fontFamily: '"MS Sans Serif", sans-serif',
+            position: "relative",
+          }}
+        >
+          I am Dr. Kitty. I have rigged this insanely cute and innocent kitty with c4. The only way to save him is to pump $c4t to $1 Million in 24 hours. But I know the trenches can't do that. MWEWEWEWEWEW
+          <div
+            style={{
+              position: "absolute",
+              bottom: "-15px",
+              left: "45px",
+              width: 0,
+              height: 0,
+              borderLeft: "15px solid transparent",
+              borderRight: "15px solid transparent",
+              borderTop: "15px solid #c0c0c0",
+            }}
+          />
+        </div>
+        <img
+          src="/evil.png"
+          alt="Evil character"
+          style={{
+            width: "300px",
+            height: "auto",
+            objectFit: "contain",
+          }}
+        />
+      </motion.div>
+    </>
   );
 };
 
