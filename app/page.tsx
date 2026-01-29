@@ -909,8 +909,7 @@ export default function BombDefusal() {
                         marginBottom: "4px",
                       }}
                     >
-                      <span style={styles.liveIndicator}></span>
-                      LIVE Market Cap (USD):
+                      Market Cap:
                     </div>
                     <div style={styles.marketCapDisplay}>
                       {isLoading ? (
