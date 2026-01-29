@@ -833,7 +833,7 @@ export default function BombDefusal() {
           {/* Main window */}
           <div style={styles.window}>
             <div style={styles.titleBar}>
-              <span>bomb.exe - URGENT</span>
+              <span>bomb.exe</span>
               <div style={styles.titleButtons}>
                 <div style={styles.titleButton}>_</div>
                 <div style={styles.titleButton}>□</div>
