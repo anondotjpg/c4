@@ -866,7 +866,7 @@ export default function BombDefusal() {
             {/* Token CA bar with truncate + copy */}
             <div style={styles.caBar}>
               <div style={styles.caLabel}>
-                Token: <strong>{tokenSymbol}</strong>
+                <strong>{tokenSymbol}</strong>
               </div>
               <div style={styles.caAddressContainer}>
                 <span style={styles.caAddressText}>
