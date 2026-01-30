@@ -419,16 +419,13 @@ export default function BombDefusal() {
       minHeight: "100vh",
       background: "#000",
       fontFamily: '"MS Sans Serif", "Segoe UI", Tahoma, sans-serif',
-      padding: "20px",
+      // extra breathing room on mobile
+      padding: "24px 12px",
       display: "flex",
       alignItems: "center",
       justifyContent: "center",
-      position: "fixed",
-      top: 0,
-      left: 0,
-      right: 0,
-      bottom: 0,
-      overflow: "auto",
+      // allow natural scrolling
+      position: "relative",
     },
     mainLayout: {
       display: "flex",
@@ -438,6 +435,8 @@ export default function BombDefusal() {
       maxWidth: "1100px",
       width: "100%",
       position: "relative",
+      // vertical breathing room if content is tall
+      margin: "16px 0",
     },
     sideColumn: {
       position: "absolute",
@@ -633,7 +632,6 @@ export default function BombDefusal() {
     },
     statusBar: {
       background: "#c0c0c0",
-      borderTop: "1px solid #808080",
       padding: "4px 8px",
       fontSize: "12px",
       display: "flex",
