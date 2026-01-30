@@ -186,18 +186,6 @@ export default function BombDefusal() {
     n === 7 ? `/g${n}.gif` : `/g${n}.webp`
   );
 
-  // track screen size for side images
-  const [isLargeScreen, setIsLargeScreen] = useState(false);
-
-  useEffect(() => {
-    const checkScreenSize = () => {
-      setIsLargeScreen(window.innerWidth >= 1024);
-    };
-    checkScreenSize();
-    window.addEventListener("resize", checkScreenSize);
-    return () => window.removeEventListener("resize", checkScreenSize);
-  }, []);
-
   // ---------------- HELPERS ----------------
 
   const truncateAddress = (address: string, chars = 4) => {
@@ -452,10 +440,6 @@ export default function BombDefusal() {
       position: "relative",
     },
     sideColumn: {
-      display: "flex",
-      flexDirection: "column",
-      gap: "8px",
-      alignItems: "center",
       position: "absolute",
       top: 0,
     },
@@ -525,6 +509,7 @@ export default function BombDefusal() {
       alignItems: "center",
       justifyContent: "space-between",
       padding: "4px 8px",
+      borderBottom: "1px solid #808080",
       background: "#c0c0c0",
       fontSize: "11px",
     },
@@ -733,7 +718,7 @@ export default function BombDefusal() {
   }
 `;
 
-  // Side images component
+  // Side images component (hidden on <lg using Tailwind)
   const SideImages = ({
     images,
     side,
@@ -742,6 +727,7 @@ export default function BombDefusal() {
     side: "left" | "right";
   }) => (
     <div
+      className="hidden lg:flex lg:flex-col lg:items-center lg:gap-2"
       style={{
         ...styles.sideColumn,
         ...(side === "left" ? styles.sideColumnLeft : styles.sideColumnRight),
@@ -810,7 +796,7 @@ export default function BombDefusal() {
         <style>{keyframes}</style>
         <div style={{ ...styles.pageWrapper, background: "#008000" }}>
           <div style={styles.mainLayout}>
-            {isLargeScreen && <SideImages images={leftImages} side="left" />}
+            <SideImages images={leftImages} side="left" />
             <div style={styles.window}>
               <div
                 style={{
@@ -866,7 +852,7 @@ export default function BombDefusal() {
                 </button>
               </div>
             </div>
-            {isLargeScreen && <SideImages images={rightImages} side="right" />}
+            <SideImages images={rightImages} side="right" />
           </div>
         </div>
       </>
@@ -883,8 +869,8 @@ export default function BombDefusal() {
         <EvilCharacter />
 
         <div style={styles.mainLayout}>
-          {/* Left side images - g1 to g5 */}
-          {isLargeScreen && <SideImages images={leftImages} side="left" />}
+          {/* Left side images - g1 to g5 (lg+ only via Tailwind) */}
+          <SideImages images={leftImages} side="left" />
 
           {/* Main window */}
           <div style={styles.window}>
@@ -1067,8 +1053,8 @@ export default function BombDefusal() {
             </div>
           </div>
 
-          {/* Right side images - g6 to g10 */}
-          {isLargeScreen && <SideImages images={rightImages} side="right" />}
+          {/* Right side images - g6 to g10 (lg+ only via Tailwind) */}
+          <SideImages images={rightImages} side="right" />
         </div>
       </div>
     </>
