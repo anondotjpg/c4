@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import Marquee from "react-fast-marquee";
 import { motion } from "framer-motion";
+import { useBackendTimer } from "@/hooks/useBackendTimer";
 
 // Isolated Evil Character Component - completely self-contained
 const EvilCharacter = () => {
@@ -106,7 +107,9 @@ const EvilCharacter = () => {
             position: "relative",
           }}
         >
-          I am Dr. Kitty. I have rigged this insanely cute and innocent kitty with c4. The only way to save him is to pump $c4t to $1 Million in 24 hours. But I know the trenches can't do that. MWEWEWEWEWEW
+          I am Dr. Kitty. I have rigged this insanely cute and innocent kitty
+          with c4. The only way to save him is to pump $c4t to $1 Million in 24
+          hours. But I know the trenches can't do that. MWEWEWEWEWEW
           <div
             style={{
               position: "absolute",
@@ -134,20 +137,29 @@ const EvilCharacter = () => {
   );
 };
 
-// Windows 95 styled bomb defusal page with PumpPortal + CoinGecko integration
+// Windows 95 styled bomb defusal page with PumpPortal + CoinGecko + backend timer
 export default function BombDefusal() {
-  const TARGET_TIME = 10 * 60; // 10 minutes in seconds
-
   // TARGET in USD
-  const TARGET_MARKET_CAP_USD = 1000000; // $100K market cap to defuse (change as you like)
+  const TARGET_MARKET_CAP_USD = 1_000_000; // $1M market cap to defuse
 
-  const [timeLeft, setTimeLeft] = useState(TARGET_TIME);
-  const [isDefused, setIsDefused] = useState(false);
-  const [isExploded, setIsExploded] = useState(false);
+  // Backend timer hook (shared state + server truth)
+  const {
+    timeRemaining, // seconds
+    isDefused,
+    isExploded,
+    triggerDefuse,
+  } = useBackendTimer({
+    pollInterval: 5000,
+    onDefused: (data) => console.log("Defused!", data),
+  });
 
   // SOL + USD market caps
-  const [currentMarketCapSol, setCurrentMarketCapSol] = useState<number | null>(null);
-  const [currentMarketCapUsd, setCurrentMarketCapUsd] = useState<number | null>(null);
+  const [currentMarketCapSol, setCurrentMarketCapSol] = useState<number | null>(
+    null
+  );
+  const [currentMarketCapUsd, setCurrentMarketCapUsd] = useState<number | null>(
+    null
+  );
 
   // Prices
   const [solPriceUsd, setSolPriceUsd] = useState<number | null>(null);
@@ -167,8 +179,24 @@ export default function BombDefusal() {
   const TOTAL_SUPPLY = 1_000_000_000;
 
   // Side images configuration - g1-g10.webp (g7 is .gif)
-  const leftImages = [1, 2, 3, 4, 5].map(n => n === 7 ? `/g${n}.gif` : `/g${n}.webp`);
-  const rightImages = [6, 7, 8, 9, 10].map(n => n === 7 ? `/g${n}.gif` : `/g${n}.webp`);
+  const leftImages = [1, 2, 3, 4, 5].map((n) =>
+    n === 7 ? `/g${n}.gif` : `/g${n}.webp`
+  );
+  const rightImages = [6, 7, 8, 9, 10].map((n) =>
+    n === 7 ? `/g${n}.gif` : `/g${n}.webp`
+  );
+
+  // track screen size for side images
+  const [isLargeScreen, setIsLargeScreen] = useState(false);
+
+  useEffect(() => {
+    const checkScreenSize = () => {
+      setIsLargeScreen(window.innerWidth >= 1024);
+    };
+    checkScreenSize();
+    window.addEventListener("resize", checkScreenSize);
+    return () => window.removeEventListener("resize", checkScreenSize);
+  }, []);
 
   // ---------------- HELPERS ----------------
 
@@ -187,9 +215,11 @@ export default function BombDefusal() {
     }
   };
 
-  const formatTime = (seconds: number) => {
-    const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
+  const formatTime = (seconds: number | null | undefined) => {
+    if (seconds == null) return "--:--";
+    const safeSeconds = Math.max(0, Math.floor(seconds));
+    const mins = Math.floor(safeSeconds / 60);
+    const secs = safeSeconds % 60;
     return `${mins.toString().padStart(2, "0")}:${secs
       .toString()
       .padStart(2, "0")}`;
@@ -222,10 +252,12 @@ export default function BombDefusal() {
     return Math.min((currentMarketCapUsd / TARGET_MARKET_CAP_USD) * 100, 100);
   };
 
-  const getTimerColor = () => {
-    if (timeLeft > 300) return "#00ff00";
-    if (timeLeft > 120) return "#ffff00";
-    if (timeLeft > 60) return "#ff8800";
+  const getTimerColor = (seconds: number | null | undefined) => {
+    if (seconds == null) return "#00ff00";
+    const s = Math.max(0, seconds);
+    if (s > 300) return "#00ff00"; // >5 min
+    if (s > 120) return "#ffff00"; // >2 min
+    if (s > 60) return "#ff8800"; // >1 min
     return "#ff0000";
   };
 
@@ -237,25 +269,7 @@ export default function BombDefusal() {
     return "#ff0000";
   };
 
-  // ---------------- TIMER ----------------
-
-  useEffect(() => {
-    if (isDefused || isExploded) return;
-
-    const timer = setInterval(() => {
-      setTimeLeft((prev) => {
-        if (prev <= 1) {
-          setIsExploded(true);
-          return 0;
-        }
-        return prev - 1;
-      });
-    }, 1000);
-
-    return () => clearInterval(timer);
-  }, [isDefused, isExploded]);
-
-  // -------- PUMPPORTAL REAL-TIME MARKET CAP (SOL) --------
+  // ---------------- PUMPPOTAL REAL-TIME MARKET CAP (SOL) ----------------
 
   useEffect(() => {
     if (isDefused || isExploded) return;
@@ -264,6 +278,7 @@ export default function BombDefusal() {
 
     const connect = () => {
       try {
+        // Standard WS endpoint (free plan friendly)
         ws = new WebSocket("wss://pumpportal.fun/api/data");
 
         ws.onopen = () => {
@@ -352,7 +367,7 @@ export default function BombDefusal() {
     };
   }, [isDefused, isExploded, TOKEN_MINT, TOTAL_SUPPLY]);
 
-  // -------- COINGECKO: SOL PRICE (USD) EVERY 2 MIN --------
+  // ---------------- COINGECKO: SOL PRICE (USD) EVERY 2 MIN ----------------
 
   useEffect(() => {
     let isMounted = true;
@@ -381,7 +396,7 @@ export default function BombDefusal() {
     };
   }, []);
 
-  // -------- DERIVE USD MARKET CAP --------
+  // ---------------- DERIVE USD MARKET CAP ----------------
 
   useEffect(() => {
     if (currentMarketCapSol != null && solPriceUsd != null) {
@@ -389,15 +404,25 @@ export default function BombDefusal() {
     }
   }, [currentMarketCapSol, solPriceUsd]);
 
-  // -------- DEFUSE WHEN USD MCAP HITS TARGET --------
+  // ---------------- DEFUSE WHEN USD MCAP HITS TARGET (BACKEND TRIGGER) ----------------
 
   useEffect(() => {
-    if (!isDefused && !isExploded && currentMarketCapUsd != null) {
-      if (currentMarketCapUsd >= TARGET_MARKET_CAP_USD) {
-        setIsDefused(true);
-      }
+    if (!currentMarketCapUsd || isDefused || isExploded) return;
+
+    if (currentMarketCapUsd >= TARGET_MARKET_CAP_USD) {
+      // Tell backend it’s time to defuse (and hit webhook)
+      triggerDefuse(
+        currentMarketCapUsd,
+        process.env.NEXT_PUBLIC_WEBHOOK_SECRET as string | undefined
+      );
     }
-  }, [currentMarketCapUsd, isDefused, isExploded, TARGET_MARKET_CAP_USD]);
+  }, [
+    currentMarketCapUsd,
+    isDefused,
+    isExploded,
+    triggerDefuse,
+    TARGET_MARKET_CAP_USD,
+  ]);
 
   // ---------------- STYLES ----------------
 
@@ -500,7 +525,6 @@ export default function BombDefusal() {
       alignItems: "center",
       justifyContent: "space-between",
       padding: "4px 8px",
-      borderBottom: "1px solid #808080",
       background: "#c0c0c0",
       fontSize: "11px",
     },
@@ -546,11 +570,12 @@ export default function BombDefusal() {
       width: "200px",
       height: "200px",
       objectFit: "contain",
-      animation: isExploded
-        ? "none"
-        : timeLeft <= 60
-        ? "shake 0.1s infinite"
-        : "none",
+      animation:
+        isExploded || isDefused
+          ? "none"
+          : timeRemaining != null && timeRemaining <= 60
+          ? "shake 0.1s infinite"
+          : "none",
     },
     timerDisplay: {
       background: "#000000",
@@ -560,9 +585,9 @@ export default function BombDefusal() {
       fontFamily: '"Courier New", monospace',
       fontSize: "48px",
       fontWeight: "bold",
-      color: getTimerColor(),
+      color: getTimerColor(timeRemaining),
       letterSpacing: "4px",
-      textShadow: `0 0 10px ${getTimerColor()}`,
+      textShadow: `0 0 10px ${getTimerColor(timeRemaining)}`,
     },
     marqueeContainer: {
       width: "100%",
@@ -634,6 +659,10 @@ export default function BombDefusal() {
       borderColor: "#808080 #ffffff #ffffff #808080",
       padding: "2px 8px",
       flex: 1,
+      display: "flex",
+      alignItems: "center",
+      gap: "6px",
+      whiteSpace: "nowrap",
     },
     explodedOverlay: {
       position: "fixed",
@@ -672,9 +701,10 @@ export default function BombDefusal() {
       height: "8px",
       borderRadius: "50%",
       background: isLiveConnected ? "#00ff4d" : "#777777",
-      marginRight: "6px",
       opacity: isLiveConnected ? 1 : 0.6,
       animation: isLiveConnected ? "livePulse 1.4s ease-in-out infinite" : "none",
+      transformOrigin: "center",
+      flexShrink: 0,
     },
   };
 
@@ -697,24 +727,26 @@ export default function BombDefusal() {
     100% { transform: rotate(360deg); }
   }
   @keyframes livePulse {
-    0% {
-      transform: scale(1);
-    }
-    50% {
-      transform: scale(1.35);
-    }
-    100% {
-      transform: scale(1);
-    }
+    0% { transform: scale(1); }
+    50% { transform: scale(1.35); }
+    100% { transform: scale(1); }
   }
 `;
 
   // Side images component
-  const SideImages = ({ images, side }: { images: string[], side: 'left' | 'right' }) => (
-    <div style={{
-      ...styles.sideColumn,
-      ...(side === 'left' ? styles.sideColumnLeft : styles.sideColumnRight)
-    }}>
+  const SideImages = ({
+    images,
+    side,
+  }: {
+    images: string[];
+    side: "left" | "right";
+  }) => (
+    <div
+      style={{
+        ...styles.sideColumn,
+        ...(side === "left" ? styles.sideColumnLeft : styles.sideColumnRight),
+      }}
+    >
       {images.map((src, index) => (
         <img
           key={`${side}-${index}`}
@@ -741,7 +773,8 @@ export default function BombDefusal() {
               </div>
               <div style={{ padding: "20px", textAlign: "center" }}>
                 <p style={{ fontSize: "16px", marginBottom: "16px" }}>
-                  {tokenSymbol} did not reach {formatUsd(TARGET_MARKET_CAP_USD)} in time.
+                  {tokenSymbol} did not reach {formatUsd(TARGET_MARKET_CAP_USD)}{" "}
+                  in time.
                 </p>
                 <p style={{ fontFamily: "monospace", color: "#808080" }}>
                   Final Market Cap: {formatUsd(currentMarketCapUsd)}
@@ -777,7 +810,7 @@ export default function BombDefusal() {
         <style>{keyframes}</style>
         <div style={{ ...styles.pageWrapper, background: "#008000" }}>
           <div style={styles.mainLayout}>
-            <SideImages images={leftImages} side="left" />
+            {isLargeScreen && <SideImages images={leftImages} side="left" />}
             <div style={styles.window}>
               <div
                 style={{
@@ -793,7 +826,8 @@ export default function BombDefusal() {
               <div style={styles.content}>
                 <h1 style={{ margin: 0, fontSize: "24px" }}>BOMB DEFUSED</h1>
                 <p style={{ textAlign: "center", margin: "8px 0" }}>
-                  {tokenSymbol} reached {formatUsd(TARGET_MARKET_CAP_USD)}. Cat status: safe.
+                  {tokenSymbol} reached {formatUsd(TARGET_MARKET_CAP_USD)}. Cat
+                  status: safe.
                 </p>
                 <div style={styles.imageContainer}>
                   <img
@@ -822,7 +856,7 @@ export default function BombDefusal() {
                     color: "#006600",
                   }}
                 >
-                  Time remaining: {formatTime(timeLeft)}
+                  Time remaining: {formatTime(timeRemaining)}
                 </p>
                 <button
                   style={styles.button}
@@ -832,7 +866,7 @@ export default function BombDefusal() {
                 </button>
               </div>
             </div>
-            <SideImages images={rightImages} side="right" />
+            {isLargeScreen && <SideImages images={rightImages} side="right" />}
           </div>
         </div>
       </>
@@ -850,7 +884,7 @@ export default function BombDefusal() {
 
         <div style={styles.mainLayout}>
           {/* Left side images - g1 to g5 */}
-          <SideImages images={leftImages} side="left" />
+          {isLargeScreen && <SideImages images={leftImages} side="left" />}
 
           {/* Main window */}
           <div style={styles.window}>
@@ -872,10 +906,7 @@ export default function BombDefusal() {
                 <span style={styles.caAddressText}>
                   {truncateAddress(TOKEN_MINT)}
                 </span>
-                <button
-                  style={styles.caCopyButton}
-                  onClick={handleCopyCA}
-                >
+                <button style={styles.caCopyButton} onClick={handleCopyCA}>
                   {copied ? "Copied" : "Copy"}
                 </button>
               </div>
@@ -886,7 +917,9 @@ export default function BombDefusal() {
                 <img src="/c4.png" alt="Bomb Cat" style={styles.catImage} />
               </div>
 
-              <div style={styles.timerDisplay}>{formatTime(timeLeft)}</div>
+              <div style={styles.timerDisplay}>
+                {formatTime(timeRemaining)}
+              </div>
 
               {/* Infinite marquee with GIFs */}
               <div style={styles.marqueeContainer}>
@@ -919,8 +952,8 @@ export default function BombDefusal() {
                     }}
                   >
                     Pump <strong>{tokenSymbol}</strong> to{" "}
-                    <strong>{formatUsd(TARGET_MARKET_CAP_USD)}</strong> market cap
-                    to defuse.
+                    <strong>{formatUsd(TARGET_MARKET_CAP_USD)}</strong> market
+                    cap to defuse.
                   </p>
 
                   <div style={{ textAlign: "center" }}>
@@ -954,10 +987,14 @@ export default function BombDefusal() {
                           <div>SOL Price: ${solPriceUsd.toFixed(2)}</div>
                         )}
                         {currentMarketCapSol != null && (
-                          <div>Market Cap (SOL): {formatSol(currentMarketCapSol)}</div>
+                          <div>
+                            Market Cap (SOL): {formatSol(currentMarketCapSol)}
+                          </div>
                         )}
                         {tokenPriceSol != null && (
-                          <div>Price per token: {formatPriceSol(tokenPriceSol)}</div>
+                          <div>
+                            Price per token: {formatPriceSol(tokenPriceSol)}
+                          </div>
                         )}
                       </div>
                     )}
@@ -987,7 +1024,10 @@ export default function BombDefusal() {
                   <button
                     style={{ ...styles.button, width: "100%" }}
                     onClick={() =>
-                      window.open(`https://pump.fun/coin/${TOKEN_MINT}`, "_blank")
+                      window.open(
+                        `https://pump.fun/coin/${TOKEN_MINT}`,
+                        "_blank"
+                      )
                     }
                   >
                     BUY {tokenSymbol} ON PUMP.FUN
@@ -1014,16 +1054,21 @@ export default function BombDefusal() {
 
             <div style={styles.statusBar}>
               <span style={styles.statusItem}>
-                Status: {timeLeft > 60 ? "ARMED" : "CRITICAL"}
+                <span style={styles.liveIndicator} />
+                {isLiveConnected ? "Live: CONNECTED" : "Live: DISCONNECTED"}
               </span>
               <span style={styles.statusItem}>
-                Pump Level: {getProgress().toFixed(0)}%
+                Status:&nbsp;
+                {timeRemaining != null && timeRemaining > 60
+                  ? "ARMED"
+                  : "CRITICAL"}
+                &nbsp;· Pump Level: {getProgress().toFixed(0)}%
               </span>
             </div>
           </div>
 
           {/* Right side images - g6 to g10 */}
-          <SideImages images={rightImages} side="right" />
+          {isLargeScreen && <SideImages images={rightImages} side="right" />}
         </div>
       </div>
     </>
