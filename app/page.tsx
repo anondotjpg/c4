@@ -133,7 +133,7 @@ export default function BombDefusal() {
   const [solPriceUsd, setSolPriceUsd] = useState<number | null>(null);
   const [tokenPriceSol, setTokenPriceSol] = useState<number | null>(null);
 
-  const [tokenSymbol] = useState("$c4t");
+  const [tokenSymbol] = useState("$C4T");
   const [isLoading, setIsLoading] = useState(true);
   const [apiError, setApiError] = useState<string | null>(null);
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
