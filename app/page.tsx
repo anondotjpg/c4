@@ -146,7 +146,7 @@ export default function BombDefusal() {
   const [copied, setCopied] = useState(false);
 
   // ⚠️ SET YOUR ACTUAL TOKEN MINT ADDRESS HERE
-  const TOKEN_MINT = "";
+  const TOKEN_MINT = "CmkEaMSrfmF8xymLTYfxKxo9tSjUpxHm1ErqeEhUpump";
 
   // PumpPortal API key (optional - enables PumpSwap data after migration)
   const PUMPPORTAL_API_KEY = process.env.NEXT_PUBLIC_PUMPPORTAL_API_KEY || "";
