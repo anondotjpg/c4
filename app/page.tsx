@@ -463,18 +463,15 @@ export default function BombDefusal() {
   const styles: { [key: string]: React.CSSProperties } = {
     pageWrapper: {
       minHeight: "100vh",
+      minWidth: "100vw",
       background: "#000",
       fontFamily: '"MS Sans Serif", "Segoe UI", Tahoma, sans-serif',
       padding: "24px 12px",
       display: "flex",
       alignItems: "center",
       justifyContent: "center",
-      position: "fixed",
-      top: 0,
-      left: 0,
-      right: 0,
-      bottom: 0,
-      overflow: "auto",
+      position: "relative",
+      boxSizing: "border-box",
     },
     mainLayout: {
       display: "flex",
@@ -732,6 +729,11 @@ export default function BombDefusal() {
   };
 
   const keyframes = `
+  html, body {
+    background: #000 !important;
+    margin: 0;
+    padding: 0;
+  }
   @keyframes pulse {
     0%, 100% { transform: scale(1); }
     50% { transform: scale(1.02); }
