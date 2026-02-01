@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import Marquee from "react-fast-marquee";
 import { motion } from "framer-motion";
 import { useBackendTimer } from "@/hooks/useBackendTimer";
@@ -11,31 +11,23 @@ const EvilCharacter = () => {
   const [isLargeScreen, setIsLargeScreen] = useState(false);
   const hasAnimated = useRef(false);
 
-  // Check for lg+ screen size (1024px and up)
   useEffect(() => {
     const checkScreenSize = () => {
       setIsLargeScreen(window.innerWidth >= 1024);
     };
-
-    // Check on mount
     checkScreenSize();
-
-    // Listen for resize
     window.addEventListener("resize", checkScreenSize);
     return () => window.removeEventListener("resize", checkScreenSize);
   }, []);
 
   useEffect(() => {
-    // Only run once
     if (hasAnimated.current) return;
     hasAnimated.current = true;
 
-    // Slide up after mount
     const showTimer = setTimeout(() => {
       setIsVisible(true);
     }, 100);
 
-    // Slide down after 10 seconds
     const hideTimer = setTimeout(() => {
       setIsVisible(false);
     }, 10000);
@@ -46,12 +38,10 @@ const EvilCharacter = () => {
     };
   }, []);
 
-  // Don't render on smaller screens
   if (!isLargeScreen) return null;
 
   return (
     <>
-      {/* Red overlay that fades in/out with the character */}
       <motion.div
         style={{
           position: "fixed",
@@ -65,11 +55,7 @@ const EvilCharacter = () => {
         }}
         animate={{ opacity: isVisible ? 0.3 : 0 }}
         initial={{ opacity: 0 }}
-        transition={{
-          type: "tween",
-          ease: "easeInOut",
-          duration: 1,
-        }}
+        transition={{ type: "tween", ease: "easeInOut", duration: 1 }}
       />
       <motion.div
         style={{
@@ -80,17 +66,12 @@ const EvilCharacter = () => {
           flexDirection: "column",
           alignItems: "flex-start",
           zIndex: 500,
-          // Scale down to 80% (20% smaller)
           transform: "scale(0.8)",
           transformOrigin: "bottom left",
         }}
         animate={{ y: isVisible ? 0 : 600 }}
         initial={{ y: 600 }}
-        transition={{
-          type: "tween",
-          ease: "easeInOut",
-          duration: 1,
-        }}
+        transition={{ type: "tween", ease: "easeInOut", duration: 1 }}
       >
         <div
           style={{
@@ -109,7 +90,7 @@ const EvilCharacter = () => {
         >
           I am Dr. Kitty. I have rigged this insanely cute and innocent kitty
           with c4. The only way to save him is to pump $c4t to $1 Million in 24
-          hours. But I know the trenches can't do that. MWEWEWEWEWEW
+          hours. But I know the trenches can&apos;t do that. MWEWEWEWEWEW
           <div
             style={{
               position: "absolute",
@@ -126,65 +107,54 @@ const EvilCharacter = () => {
         <img
           src="/evil.png"
           alt="Evil character"
-          style={{
-            width: "300px",
-            height: "auto",
-            objectFit: "contain",
-          }}
+          style={{ width: "300px", height: "auto", objectFit: "contain" }}
         />
       </motion.div>
     </>
   );
 };
 
-// Windows 95 styled bomb defusal page with PumpPortal + CoinGecko + backend timer
+// Windows 95 styled bomb defusal page with PumpPortal + PumpSwap + CoinGecko + backend timer
 export default function BombDefusal() {
-  // TARGET in USD
-  const TARGET_MARKET_CAP_USD = 1_000_000; // $1M market cap to defuse
+  const TARGET_MARKET_CAP_USD = 1_000_000;
 
-  // Backend timer hook (shared state + server truth)
-  const {
-    timeRemaining, // seconds
-    isDefused,
-    isExploded,
-    triggerDefuse,
-  } = useBackendTimer({
+  const { timeRemaining, isDefused, isExploded, triggerDefuse } = useBackendTimer({
     pollInterval: 5000,
     onDefused: (data) => console.log("Defused!", data),
   });
 
-  // SOL + USD market caps
-  const [currentMarketCapSol, setCurrentMarketCapSol] = useState<number | null>(
-    null
-  );
-  const [currentMarketCapUsd, setCurrentMarketCapUsd] = useState<number | null>(
-    null
-  );
+  const hasTriggeredDefuse = useRef(false);
+
+  // Market cap state
+  const [currentMarketCapSol, setCurrentMarketCapSol] = useState<number | null>(null);
+  const [currentMarketCapUsd, setCurrentMarketCapUsd] = useState<number | null>(null);
 
   // Prices
   const [solPriceUsd, setSolPriceUsd] = useState<number | null>(null);
   const [tokenPriceSol, setTokenPriceSol] = useState<number | null>(null);
 
-  const [tokenSymbol, setTokenSymbol] = useState("$c4t");
+  const [tokenSymbol] = useState("$c4t");
   const [isLoading, setIsLoading] = useState(true);
   const [apiError, setApiError] = useState<string | null>(null);
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
-  const [isLiveConnected, setIsLiveConnected] = useState(false);
+  
+  // Connection status for both websockets
+  const [isBondingCurveConnected, setIsBondingCurveConnected] = useState(false);
+  const [isPumpSwapConnected, setIsPumpSwapConnected] = useState(false);
+  const [dataSource, setDataSource] = useState<"bonding" | "pumpswap" | null>(null);
 
   const [copied, setCopied] = useState(false);
 
-  const TOKEN_MINT = "";
+  // ⚠️ SET YOUR ACTUAL TOKEN MINT ADDRESS HERE
+  const TOKEN_MINT = "FohpGCNk3BkRu9hwEEKs7aVfSVe7yZvyrekVLQptpump";
 
-  // Standard pump.fun supply (adjust if needed)
+  // PumpPortal API key (optional - enables PumpSwap data after migration)
+  const PUMPPORTAL_API_KEY = process.env.NEXT_PUBLIC_PUMPPORTAL_API_KEY || "";
+
   const TOTAL_SUPPLY = 1_000_000_000;
 
-  // Side images configuration - g1-g10.webp (g7 is .gif)
-  const leftImages = [1, 2, 3, 4, 5].map((n) =>
-    n === 7 ? `/g${n}.gif` : `/g${n}.webp`
-  );
-  const rightImages = [6, 7, 8, 9, 10].map((n) =>
-    n === 7 ? `/g${n}.gif` : `/g${n}.webp`
-  );
+  const leftImages = [1, 2, 3, 4, 5].map((n) => (n === 7 ? `/g${n}.gif` : `/g${n}.webp`));
+  const rightImages = [6, 7, 8, 9, 10].map((n) => (n === 7 ? `/g${n}.gif` : `/g${n}.webp`));
 
   // ---------------- HELPERS ----------------
 
@@ -208,9 +178,7 @@ export default function BombDefusal() {
     const safeSeconds = Math.max(0, Math.floor(seconds));
     const mins = Math.floor(safeSeconds / 60);
     const secs = safeSeconds % 60;
-    return `${mins.toString().padStart(2, "0")}:${secs
-      .toString()
-      .padStart(2, "0")}`;
+    return `${mins.toString().padStart(2, "0")}:${secs.toString().padStart(2, "0")}`;
   };
 
   const formatUsd = (val: number | null) => {
@@ -243,9 +211,9 @@ export default function BombDefusal() {
   const getTimerColor = (seconds: number | null | undefined) => {
     if (seconds == null) return "#00ff00";
     const s = Math.max(0, seconds);
-    if (s > 300) return "#00ff00"; // >5 min
-    if (s > 120) return "#ffff00"; // >2 min
-    if (s > 60) return "#ff8800"; // >1 min
+    if (s > 300) return "#00ff00";
+    if (s > 120) return "#ffff00";
+    if (s > 60) return "#ff8800";
     return "#ff0000";
   };
 
@@ -257,103 +225,175 @@ export default function BombDefusal() {
     return "#ff0000";
   };
 
-  // ---------------- PUMPPOTAL REAL-TIME MARKET CAP (SOL) ----------------
+  // Shared handler for websocket messages from both connections
+  const handleWebSocketMessage = useCallback(
+    (data: string, source: "bonding" | "pumpswap") => {
+      try {
+        const raw = JSON.parse(data);
+        const msg = Array.isArray(raw) ? raw[0] : raw;
+        if (!msg) return;
+
+        // Ignore messages for other tokens
+        if (msg.mint && msg.mint !== TOKEN_MINT) return;
+
+        // Extract market cap - works for both bonding curve and PumpSwap data
+        const marketCapSol = msg.marketCapSol as number | undefined;
+        const vTokensInBondingCurve = msg.vTokensInBondingCurve as number | undefined;
+
+        if (typeof marketCapSol === "number") {
+          setCurrentMarketCapSol(marketCapSol);
+          setLastUpdated(new Date());
+          setIsLoading(false);
+          setApiError(null);
+          setDataSource(source);
+
+          const supply =
+            vTokensInBondingCurve && vTokensInBondingCurve > 0
+              ? vTokensInBondingCurve
+              : TOTAL_SUPPLY;
+
+          if (supply > 0) {
+            setTokenPriceSol(marketCapSol / supply);
+          }
+        }
+      } catch (err) {
+        console.error(`Error parsing ${source} message:`, err);
+      }
+    },
+    [TOKEN_MINT, TOTAL_SUPPLY]
+  );
+
+  // ---------------- DUAL WEBSOCKET: BONDING CURVE (FREE) + PUMPSWAP (API KEY) ----------------
 
   useEffect(() => {
     if (isDefused || isExploded) return;
+    if (!TOKEN_MINT) return;
 
-    let ws: WebSocket | null = null;
+    let bondingWs: WebSocket | null = null;
+    let pumpSwapWs: WebSocket | null = null;
+    let bondingReconnectTimeout: NodeJS.Timeout | null = null;
+    let pumpSwapReconnectTimeout: NodeJS.Timeout | null = null;
 
-    const connect = () => {
+    const RECONNECT_DELAY = 3000;
+
+    // ========== BONDING CURVE WEBSOCKET (FREE - NO API KEY) ==========
+    const connectBondingCurve = () => {
       try {
-        // Standard WS endpoint (free plan friendly)
-        ws = new WebSocket("wss://pumpportal.fun/api/data");
+        bondingWs = new WebSocket("wss://pumpportal.fun/api/data");
 
-        ws.onopen = () => {
-          setIsLiveConnected(true);
-          setApiError(null);
+        bondingWs.onopen = () => {
+          console.log("🟢 Bonding curve WS connected");
+          setIsBondingCurveConnected(true);
 
-          // Subscribe to trades for our specific token
           const payload = {
             method: "subscribeTokenTrade",
             keys: [TOKEN_MINT],
           };
-
-          ws?.send(JSON.stringify(payload));
+          bondingWs?.send(JSON.stringify(payload));
         };
 
-        ws.onmessage = (event) => {
-          try {
-            const raw = JSON.parse(event.data);
-            const msg = Array.isArray(raw) ? raw[0] : raw;
-            if (!msg) return;
-
-            if (msg.mint && msg.mint !== TOKEN_MINT) return;
-
-            const marketCapSol = msg.marketCapSol as number | undefined;
-            const vTokensInBondingCurve =
-              msg.vTokensInBondingCurve as number | undefined;
-
-            if (typeof marketCapSol === "number") {
-              setCurrentMarketCapSol(marketCapSol);
-              setLastUpdated(new Date());
-              setIsLoading(false);
-              setApiError(null);
-
-              const supply =
-                vTokensInBondingCurve && vTokensInBondingCurve > 0
-                  ? vTokensInBondingCurve
-                  : TOTAL_SUPPLY;
-
-              if (supply > 0) {
-                const priceSol = marketCapSol / supply;
-                setTokenPriceSol(priceSol);
-              }
-            }
-          } catch (err) {
-            console.error("Error parsing PumpPortal message:", err);
-            setApiError("Error parsing real-time data");
-            setIsLoading(false);
-          }
+        bondingWs.onmessage = (event) => {
+          handleWebSocketMessage(event.data, "bonding");
         };
 
-        ws.onerror = (err) => {
-          console.error("PumpPortal websocket error:", err);
-          setApiError("Real-time connection error");
-          setIsLiveConnected(false);
-          setIsLoading(false);
+        bondingWs.onerror = (err) => {
+          console.error("Bonding curve WS error:", err);
+          setIsBondingCurveConnected(false);
         };
 
-        ws.onclose = () => {
-          setIsLiveConnected(false);
+        bondingWs.onclose = () => {
+          console.log("🔴 Bonding curve WS closed, reconnecting...");
+          setIsBondingCurveConnected(false);
+
+          // Auto-reconnect
+          bondingReconnectTimeout = setTimeout(connectBondingCurve, RECONNECT_DELAY);
         };
       } catch (err) {
-        console.error("Error connecting PumpPortal websocket:", err);
-        setApiError("Failed to connect to real-time data");
-        setIsLoading(false);
+        console.error("Error connecting bonding curve WS:", err);
+        setIsBondingCurveConnected(false);
+        bondingReconnectTimeout = setTimeout(connectBondingCurve, RECONNECT_DELAY);
       }
     };
 
-    connect();
+    // ========== PUMPSWAP WEBSOCKET (REQUIRES API KEY) ==========
+    const connectPumpSwap = () => {
+      // Only connect if we have an API key
+      if (!PUMPPORTAL_API_KEY) {
+        console.log("⚪ No PumpPortal API key - PumpSwap data disabled");
+        return;
+      }
 
+      try {
+        const wsUrl = `wss://pumpportal.fun/api/data?api-key=${PUMPPORTAL_API_KEY}`;
+        pumpSwapWs = new WebSocket(wsUrl);
+
+        pumpSwapWs.onopen = () => {
+          console.log("🟢 PumpSwap WS connected (with API key)");
+          setIsPumpSwapConnected(true);
+
+          // Subscribe to token trades (will include PumpSwap data after migration)
+          const payload = {
+            method: "subscribeTokenTrade",
+            keys: [TOKEN_MINT],
+          };
+          pumpSwapWs?.send(JSON.stringify(payload));
+        };
+
+        pumpSwapWs.onmessage = (event) => {
+          handleWebSocketMessage(event.data, "pumpswap");
+        };
+
+        pumpSwapWs.onerror = (err) => {
+          console.error("PumpSwap WS error:", err);
+          setIsPumpSwapConnected(false);
+        };
+
+        pumpSwapWs.onclose = () => {
+          console.log("🔴 PumpSwap WS closed, reconnecting...");
+          setIsPumpSwapConnected(false);
+
+          // Auto-reconnect
+          pumpSwapReconnectTimeout = setTimeout(connectPumpSwap, RECONNECT_DELAY);
+        };
+      } catch (err) {
+        console.error("Error connecting PumpSwap WS:", err);
+        setIsPumpSwapConnected(false);
+        pumpSwapReconnectTimeout = setTimeout(connectPumpSwap, RECONNECT_DELAY);
+      }
+    };
+
+    // Connect both websockets
+    connectBondingCurve();
+    connectPumpSwap();
+
+    // Cleanup
     return () => {
-      if (ws) {
+      if (bondingReconnectTimeout) clearTimeout(bondingReconnectTimeout);
+      if (pumpSwapReconnectTimeout) clearTimeout(pumpSwapReconnectTimeout);
+
+      if (bondingWs) {
         try {
-          if (ws.readyState === WebSocket.OPEN) {
-            ws.send(
-              JSON.stringify({
-                method: "unsubscribeTokenTrade",
-                keys: [TOKEN_MINT],
-              })
-            );
+          if (bondingWs.readyState === WebSocket.OPEN) {
+            bondingWs.send(JSON.stringify({ method: "unsubscribeTokenTrade", keys: [TOKEN_MINT] }));
           }
-          ws.close();
+          bondingWs.close();
         } catch (e) {
-          // ignore
+          /* ignore */
+        }
+      }
+
+      if (pumpSwapWs) {
+        try {
+          if (pumpSwapWs.readyState === WebSocket.OPEN) {
+            pumpSwapWs.send(JSON.stringify({ method: "unsubscribeTokenTrade", keys: [TOKEN_MINT] }));
+          }
+          pumpSwapWs.close();
+        } catch (e) {
+          /* ignore */
         }
       }
     };
-  }, [isDefused, isExploded, TOKEN_MINT, TOTAL_SUPPLY]);
+  }, [isDefused, isExploded, TOKEN_MINT, PUMPPORTAL_API_KEY, handleWebSocketMessage]);
 
   // ---------------- COINGECKO: SOL PRICE (USD) EVERY 2 MIN ----------------
 
@@ -376,7 +416,7 @@ export default function BombDefusal() {
     };
 
     fetchSolPrice();
-    const interval = setInterval(fetchSolPrice, 120000); // 2 minutes
+    const interval = setInterval(fetchSolPrice, 120000);
 
     return () => {
       isMounted = false;
@@ -392,39 +432,42 @@ export default function BombDefusal() {
     }
   }, [currentMarketCapSol, solPriceUsd]);
 
-  // ---------------- DEFUSE WHEN USD MCAP HITS TARGET (BACKEND TRIGGER) ----------------
+  // ---------------- DEFUSE WHEN USD MCAP HITS TARGET ----------------
 
   useEffect(() => {
     if (!currentMarketCapUsd || isDefused || isExploded) return;
+    if (hasTriggeredDefuse.current) return;
 
     if (currentMarketCapUsd >= TARGET_MARKET_CAP_USD) {
-      // Tell backend it’s time to defuse (and hit webhook)
+      hasTriggeredDefuse.current = true;
       triggerDefuse(
         currentMarketCapUsd,
         process.env.NEXT_PUBLIC_WEBHOOK_SECRET as string | undefined
       );
     }
-  }, [
-    currentMarketCapUsd,
-    isDefused,
-    isExploded,
-    triggerDefuse,
-    TARGET_MARKET_CAP_USD,
-  ]);
+  }, [currentMarketCapUsd, isDefused, isExploded, triggerDefuse, TARGET_MARKET_CAP_USD]);
 
   // ---------------- STYLES ----------------
+
+  // Compute live status
+  const isLiveConnected = isBondingCurveConnected || isPumpSwapConnected;
+
+  const getConnectionStatus = () => {
+    if (isBondingCurveConnected && isPumpSwapConnected) return "DUAL CONNECTED";
+    if (isPumpSwapConnected) return "PUMPSWAP";
+    if (isBondingCurveConnected) return "BONDING CURVE";
+    return "DISCONNECTED";
+  };
 
   const styles: { [key: string]: React.CSSProperties } = {
     pageWrapper: {
       minHeight: "100vh",
       background: "#000",
       fontFamily: '"MS Sans Serif", "Segoe UI", Tahoma, sans-serif',
-      // extra breathing room on mobile
       padding: "24px 12px",
       display: "flex",
       alignItems: "center",
       justifyContent: "center",
-      // allow natural scrolling
       position: "relative",
     },
     mainLayout: {
@@ -435,7 +478,6 @@ export default function BombDefusal() {
       maxWidth: "1100px",
       width: "100%",
       position: "relative",
-      // vertical breathing room if content is tall
       margin: "16px 0",
     },
     sideColumn: {
@@ -490,18 +532,6 @@ export default function BombDefusal() {
       fontWeight: "bold",
       cursor: "pointer",
       fontFamily: "Marlett, sans-serif",
-    },
-    menuBar: {
-      background: "#c0c0c0",
-      borderBottom: "1px solid #808080",
-      padding: "2px 4px",
-      display: "flex",
-      gap: "8px",
-      fontSize: "12px",
-    },
-    menuItem: {
-      padding: "2px 6px",
-      cursor: "pointer",
     },
     caBar: {
       display: "flex",
@@ -633,7 +663,7 @@ export default function BombDefusal() {
     statusBar: {
       background: "#c0c0c0",
       padding: "4px 8px",
-      fontSize: "12px",
+      fontSize: "11px",
       display: "flex",
       gap: "8px",
     },
@@ -646,6 +676,7 @@ export default function BombDefusal() {
       alignItems: "center",
       gap: "6px",
       whiteSpace: "nowrap",
+      overflow: "hidden",
     },
     explodedOverlay: {
       position: "fixed",
@@ -666,13 +697,6 @@ export default function BombDefusal() {
       color: "#ffffff",
       textShadow: "4px 4px 0px #000000",
     },
-    aboutWindow: {
-      position: "fixed",
-      top: "50%",
-      left: "50%",
-      transform: "translate(-50%, -50%)",
-      zIndex: 100,
-    },
     errorText: {
       color: "#ff0000",
       fontSize: "11px",
@@ -687,6 +711,16 @@ export default function BombDefusal() {
       opacity: isLiveConnected ? 1 : 0.6,
       animation: isLiveConnected ? "livePulse 1.4s ease-in-out infinite" : "none",
       transformOrigin: "center",
+      flexShrink: 0,
+    },
+    dualIndicator: {
+      display: "inline-block",
+      width: "8px",
+      height: "8px",
+      borderRadius: "50%",
+      background: isPumpSwapConnected ? "#00ffff" : "#777777",
+      opacity: isPumpSwapConnected ? 1 : 0.4,
+      marginLeft: "4px",
       flexShrink: 0,
     },
   };
@@ -705,10 +739,6 @@ export default function BombDefusal() {
     0%, 100% { background: #ff0000; }
     50% { background: #ff8800; }
   }
-  @keyframes spin {
-    0% { transform: rotate(0deg); }
-    100% { transform: rotate(360deg); }
-  }
   @keyframes livePulse {
     0% { transform: scale(1); }
     50% { transform: scale(1.35); }
@@ -716,14 +746,7 @@ export default function BombDefusal() {
   }
 `;
 
-  // Side images component (hidden on <lg using Tailwind)
-  const SideImages = ({
-    images,
-    side,
-  }: {
-    images: string[];
-    side: "left" | "right";
-  }) => (
+  const SideImages = ({ images, side }: { images: string[]; side: "left" | "right" }) => (
     <div
       className="hidden lg:flex lg:flex-col lg:items-center lg:gap-2"
       style={{
@@ -757,19 +780,12 @@ export default function BombDefusal() {
               </div>
               <div style={{ padding: "20px", textAlign: "center" }}>
                 <p style={{ fontSize: "16px", marginBottom: "16px" }}>
-                  {tokenSymbol} did not reach {formatUsd(TARGET_MARKET_CAP_USD)}{" "}
-                  in time.
+                  {tokenSymbol} did not reach {formatUsd(TARGET_MARKET_CAP_USD)} in time.
                 </p>
                 <p style={{ fontFamily: "monospace", color: "#808080" }}>
                   Final Market Cap: {formatUsd(currentMarketCapUsd)}
                 </p>
-                <p
-                  style={{
-                    fontFamily: "monospace",
-                    color: "#808080",
-                    marginTop: "8px",
-                  }}
-                >
+                <p style={{ fontFamily: "monospace", color: "#808080", marginTop: "8px" }}>
                   The Trenches have failed.
                 </p>
                 <button
@@ -810,42 +826,22 @@ export default function BombDefusal() {
               <div style={styles.content}>
                 <h1 style={{ margin: 0, fontSize: "24px" }}>BOMB DEFUSED</h1>
                 <p style={{ textAlign: "center", margin: "8px 0" }}>
-                  {tokenSymbol} reached {formatUsd(TARGET_MARKET_CAP_USD)}. Cat
-                  status: safe.
+                  {tokenSymbol} reached {formatUsd(TARGET_MARKET_CAP_USD)}. Cat status: safe.
                 </p>
                 <div style={styles.imageContainer}>
                   <img
                     src="/c4.png"
                     alt="Happy Cat"
-                    style={{
-                      ...styles.catImage,
-                      animation: "none",
-                      filter: "hue-rotate(90deg)",
-                    }}
+                    style={{ ...styles.catImage, animation: "none", filter: "hue-rotate(90deg)" }}
                   />
                 </div>
-                <p
-                  style={{
-                    fontFamily: "monospace",
-                    fontSize: "14px",
-                    color: "#008000",
-                  }}
-                >
+                <p style={{ fontFamily: "monospace", fontSize: "14px", color: "#008000" }}>
                   Final Market Cap: {formatUsd(currentMarketCapUsd)}
                 </p>
-                <p
-                  style={{
-                    fontFamily: "monospace",
-                    fontSize: "12px",
-                    color: "#006600",
-                  }}
-                >
+                <p style={{ fontFamily: "monospace", fontSize: "12px", color: "#006600" }}>
                   Time remaining: {formatTime(timeRemaining)}
                 </p>
-                <button
-                  style={styles.button}
-                  onClick={() => window.location.reload()}
-                >
+                <button style={styles.button} onClick={() => window.location.reload()}>
                   Play Again
                 </button>
               </div>
@@ -863,14 +859,11 @@ export default function BombDefusal() {
     <>
       <style>{keyframes}</style>
       <div style={styles.pageWrapper}>
-        {/* Evil character */}
         <EvilCharacter />
 
         <div style={styles.mainLayout}>
-          {/* Left side images - g1 to g5 (lg+ only via Tailwind) */}
           <SideImages images={leftImages} side="left" />
 
-          {/* Main window */}
           <div style={styles.window}>
             <div style={styles.titleBar}>
               <span>bomb.exe</span>
@@ -881,15 +874,12 @@ export default function BombDefusal() {
               </div>
             </div>
 
-            {/* Token CA bar with truncate + copy */}
             <div style={styles.caBar}>
               <div style={styles.caLabel}>
                 <strong>{tokenSymbol}</strong>
               </div>
               <div style={styles.caAddressContainer}>
-                <span style={styles.caAddressText}>
-                  {truncateAddress(TOKEN_MINT)}
-                </span>
+                <span style={styles.caAddressText}>{truncateAddress(TOKEN_MINT)}</span>
                 <button style={styles.caCopyButton} onClick={handleCopyCA}>
                   {copied ? "Copied" : "Copy"}
                 </button>
@@ -901,11 +891,8 @@ export default function BombDefusal() {
                 <img src="/c4.png" alt="Bomb Cat" style={styles.catImage} />
               </div>
 
-              <div style={styles.timerDisplay}>
-                {formatTime(timeRemaining)}
-              </div>
+              <div style={styles.timerDisplay}>{formatTime(timeRemaining)}</div>
 
-              {/* Infinite marquee with GIFs */}
               <div style={styles.marqueeContainer}>
                 <Marquee speed={50} gradient={false} autoFill={true}>
                   {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((num) => (
@@ -921,71 +908,33 @@ export default function BombDefusal() {
 
               <fieldset style={styles.fieldset}>
                 <legend style={styles.legend}>Defuse Instructions</legend>
-                <div
-                  style={{
-                    display: "flex",
-                    flexDirection: "column",
-                    gap: "12px",
-                  }}
-                >
-                  <p
-                    style={{
-                      margin: 0,
-                      fontSize: "13px",
-                      textAlign: "center",
-                    }}
-                  >
+                <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+                  <p style={{ margin: 0, fontSize: "13px", textAlign: "center" }}>
                     Pump <strong>{tokenSymbol}</strong> to{" "}
-                    <strong>{formatUsd(TARGET_MARKET_CAP_USD)}</strong> market
-                    cap to defuse.
+                    <strong>{formatUsd(TARGET_MARKET_CAP_USD)}</strong> market cap to defuse.
                   </p>
 
                   <div style={{ textAlign: "center" }}>
-                    <div
-                      style={{
-                        fontSize: "11px",
-                        color: "#808080",
-                        marginBottom: "4px",
-                      }}
-                    >
+                    <div style={{ fontSize: "11px", color: "#808080", marginBottom: "4px" }}>
                       Market Cap:
                     </div>
                     <div style={styles.marketCapDisplay}>
-                      {isLoading ? (
-                        <span>updating...</span>
-                      ) : (
-                        formatUsd(currentMarketCapUsd)
-                      )}
+                      {isLoading ? <span>updating...</span> : formatUsd(currentMarketCapUsd)}
                     </div>
 
-                    {/* Extra info: SOL price + SOL mcap */}
                     {(solPriceUsd != null || currentMarketCapSol != null) && (
-                      <div
-                        style={{
-                          fontSize: "10px",
-                          color: "#808080",
-                          marginTop: "4px",
-                        }}
-                      >
-                        {solPriceUsd != null && (
-                          <div>SOL Price: ${solPriceUsd.toFixed(2)}</div>
-                        )}
+                      <div style={{ fontSize: "10px", color: "#808080", marginTop: "4px" }}>
+                        {solPriceUsd != null && <div>SOL Price: ${solPriceUsd.toFixed(2)}</div>}
                         {currentMarketCapSol != null && (
-                          <div>
-                            Market Cap (SOL): {formatSol(currentMarketCapSol)}
-                          </div>
+                          <div>Market Cap (SOL): {formatSol(currentMarketCapSol)}</div>
                         )}
                         {tokenPriceSol != null && (
-                          <div>
-                            Price per token: {formatPriceSol(tokenPriceSol)}
-                          </div>
+                          <div>Price per token: {formatPriceSol(tokenPriceSol)}</div>
                         )}
                       </div>
                     )}
 
-                    {apiError && (
-                      <div style={styles.errorText}>Error: {apiError}</div>
-                    )}
+                    {apiError && <div style={styles.errorText}>Error: {apiError}</div>}
                   </div>
 
                   <div>
@@ -1007,26 +956,15 @@ export default function BombDefusal() {
 
                   <button
                     style={{ ...styles.button, width: "100%" }}
-                    onClick={() =>
-                      window.open(
-                        `https://pump.fun/coin/${TOKEN_MINT}`,
-                        "_blank"
-                      )
-                    }
+                    onClick={() => window.open(`https://pump.fun/coin/${TOKEN_MINT}`, "_blank")}
                   >
                     BUY {tokenSymbol} ON PUMP.FUN
                   </button>
                 </div>
               </fieldset>
 
-              <p
-                style={{
-                  fontSize: "10px",
-                  color: "#808080",
-                  textAlign: "center",
-                  margin: 0,
-                }}
-              >
+              <p style={{ fontSize: "10px", color: "#808080", textAlign: "center", margin: 0 }}>
+                {dataSource && <span>Source: {dataSource === "pumpswap" ? "PumpSwap" : "Bonding Curve"}</span>}
                 {lastUpdated && (
                   <>
                     <br />
@@ -1039,19 +977,16 @@ export default function BombDefusal() {
             <div style={styles.statusBar}>
               <span style={styles.statusItem}>
                 <span style={styles.liveIndicator} />
-                {isLiveConnected ? "Live: CONNECTED" : "Live: DISCONNECTED"}
+                {isPumpSwapConnected && <span style={styles.dualIndicator} title="PumpSwap" />}
+                {getConnectionStatus()}
               </span>
               <span style={styles.statusItem}>
-                Status:&nbsp;
-                {timeRemaining != null && timeRemaining > 60
-                  ? "ARMED"
-                  : "CRITICAL"}
-                &nbsp;· Pump Level: {getProgress().toFixed(0)}%
+                {timeRemaining != null && timeRemaining > 60 ? "ARMED" : "CRITICAL"} ·{" "}
+                {getProgress().toFixed(0)}%
               </span>
             </div>
           </div>
 
-          {/* Right side images - g6 to g10 (lg+ only via Tailwind) */}
           <SideImages images={rightImages} side="right" />
         </div>
       </div>
