@@ -173,7 +173,7 @@ export default function BombDefusal() {
 
   const [copied, setCopied] = useState(false);
 
-  const TOKEN_MINT = "FohpGCNk3BkRu9hwEEKs7aVfSVe7yZvyrekVLQptpump";
+  const TOKEN_MINT = "";
 
   // Standard pump.fun supply (adjust if needed)
   const TOTAL_SUPPLY = 1_000_000_000;
