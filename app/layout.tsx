@@ -13,7 +13,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "c4t | save the c4t",
+  title: "C4T | save the cat",
   description: "this cat will explode",
 };
 
