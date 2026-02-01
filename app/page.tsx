@@ -146,7 +146,7 @@ export default function BombDefusal() {
   const [copied, setCopied] = useState(false);
 
   // ⚠️ SET YOUR ACTUAL TOKEN MINT ADDRESS HERE
-  const TOKEN_MINT = "FohpGCNk3BkRu9hwEEKs7aVfSVe7yZvyrekVLQptpump";
+  const TOKEN_MINT = "";
 
   // PumpPortal API key (optional - enables PumpSwap data after migration)
   const PUMPPORTAL_API_KEY = process.env.NEXT_PUBLIC_PUMPPORTAL_API_KEY || "";
@@ -174,11 +174,12 @@ export default function BombDefusal() {
   };
 
   const formatTime = (seconds: number | null | undefined) => {
-    if (seconds == null) return "--:--";
+    if (seconds == null) return "--:--:--";
     const safeSeconds = Math.max(0, Math.floor(seconds));
-    const mins = Math.floor(safeSeconds / 60);
+    const hours = Math.floor(safeSeconds / 3600);
+    const mins = Math.floor((safeSeconds % 3600) / 60);
     const secs = safeSeconds % 60;
-    return `${mins.toString().padStart(2, "0")}:${secs.toString().padStart(2, "0")}`;
+    return `${hours.toString().padStart(2, "0")}:${mins.toString().padStart(2, "0")}:${secs.toString().padStart(2, "0")}`;
   };
 
   const formatUsd = (val: number | null) => {
@@ -211,10 +212,10 @@ export default function BombDefusal() {
   const getTimerColor = (seconds: number | null | undefined) => {
     if (seconds == null) return "#00ff00";
     const s = Math.max(0, seconds);
-    if (s > 300) return "#00ff00";
-    if (s > 120) return "#ffff00";
-    if (s > 60) return "#ff8800";
-    return "#ff0000";
+    if (s > 3600) return "#00ff00";  // >1 hour = green
+    if (s > 1800) return "#ffff00";  // >30 min = yellow
+    if (s > 600) return "#ff8800";   // >10 min = orange
+    return "#ff0000";                 // <10 min = red
   };
 
   const getMarketCapColor = () => {
@@ -587,7 +588,7 @@ export default function BombDefusal() {
       animation:
         isExploded || isDefused
           ? "none"
-          : timeRemaining != null && timeRemaining <= 60
+          : timeRemaining != null && timeRemaining <= 600
           ? "shake 0.1s infinite"
           : "none",
     },
@@ -597,10 +598,10 @@ export default function BombDefusal() {
       borderColor: "#808080 #ffffff #ffffff #808080",
       padding: "12px 24px",
       fontFamily: '"Courier New", monospace',
-      fontSize: "48px",
+      fontSize: "40px",
       fontWeight: "bold",
       color: getTimerColor(timeRemaining),
-      letterSpacing: "4px",
+      letterSpacing: "2px",
       textShadow: `0 0 10px ${getTimerColor(timeRemaining)}`,
     },
     marqueeContainer: {
@@ -981,7 +982,7 @@ export default function BombDefusal() {
                 {getConnectionStatus()}
               </span>
               <span style={styles.statusItem}>
-                {timeRemaining != null && timeRemaining > 60 ? "ARMED" : "CRITICAL"} ·{" "}
+                {timeRemaining != null && timeRemaining > 600 ? "ARMED" : "CRITICAL"} ·{" "}
                 {getProgress().toFixed(0)}%
               </span>
             </div>
